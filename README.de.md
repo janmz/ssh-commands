@@ -17,7 +17,7 @@ Lizenz: MIT mit Namensnennung (siehe [LICENSE](LICENSE)).
 
 ## Voraussetzungen
 
-- Go 1.24 oder neuer (siehe `go.mod`)
+- Go 1.25 oder neuer (siehe `go.mod`)
 
 ## Installation
 

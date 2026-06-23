@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## [0.2.3] – 2026-06-24 00:41:50
+
+### Changed
+
+- **Dependencies:** `golang.org/x/crypto` upgraded to v0.52.0 (fixes
+  govulncheck findings GO-2026-5013 through GO-2026-5021).
+- **Go:** minimum version raised to 1.25; CI uses Go 1.25.x (≥ 1.25.10 for
+  stdlib fix GO-2026-4971).
+
 ## [0.2.2] – 2026-06-24 00:34:37
 
 ### Added

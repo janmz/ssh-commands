@@ -6,7 +6,7 @@ Thanks for your interest in contributing!
 
 ## Development
 
-- Go version: see `go.mod` (currently Go 1.24+).
+- Go version: see `go.mod` (currently Go 1.25+).
 - Run tests locally:
 
 ```bash

@@ -6,7 +6,7 @@ Vielen Dank für Ihr Interesse an diesem Projekt!
 
 ## Entwicklung
 
-- Go-Version: siehe `go.mod` (derzeit Go 1.24+).
+- Go-Version: siehe `go.mod` (derzeit Go 1.25+).
 - Tests lokal ausführen:
 
 ```bash

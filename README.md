@@ -16,7 +16,7 @@ License: MIT with attribution (see [LICENSE](LICENSE)).
 
 ## Requirements
 
-- Go 1.24 or later (see `go.mod`)
+- Go 1.25 or later (see `go.mod`)
 
 ## Installation
 
