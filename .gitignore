@@ -1,0 +1,29 @@
+# Local config and secrets
+**/.env
+**/.env.*
+config.json
+
+# Cursor / AI assistant (do not commit)
+.cursor/
+.cursorrules
+AGENTS.md
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+/vendor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and backups
+*.log
+*.bak
