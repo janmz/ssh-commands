@@ -1,0 +1,5 @@
+# Keep LF in the working tree for Go sources and scripts (gofmt, shell hooks).
+* text=auto
+*.go text eol=lf
+*.sh text eol=lf
+.githooks/* text eol=lf

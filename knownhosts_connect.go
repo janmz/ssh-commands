@@ -1,7 +1,9 @@
 package sshcommands
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,71 +12,25 @@ import (
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
+// isKnownHostsKeyMismatch reports whether err is a known_hosts key mismatch
+// (host known, but with a different key).
 func isKnownHostsKeyMismatch(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "knownhosts: key mismatch")
-}
-
-func buildAuthMethods(opts *Opts) ([]ssh.AuthMethod, error) {
-	var auth []ssh.AuthMethod
-	if opts.KeyFile != "" {
-		keyPath := filepath.FromSlash(opts.KeyFile)
-		key, err := os.ReadFile(keyPath)
-		if err != nil {
-			return nil, fmt.Errorf("read key file: %w", err)
-		}
-		signer, err := ssh.ParsePrivateKey(key)
-		if err != nil {
-			return nil, fmt.Errorf("parse private key: %w", err)
-		}
-		auth = append(auth, ssh.PublicKeys(signer))
-	}
-	if opts.Password != "" {
-		auth = append(auth, ssh.Password(opts.Password))
-	}
-	if len(auth) == 0 {
-		return nil, fmt.Errorf("no SSH auth: set KeyFile or Password in Opts")
-	}
-	return auth, nil
-}
-
-// DialWithHostKeyCallback connects using a custom host key callback instead of
-// opts.HostKey. opts.HostKey is ignored.
-func DialWithHostKeyCallback(opts *Opts, hostKeyCallback ssh.HostKeyCallback, log Logger) (*ssh.Client, error) {
-	if opts.Host == "" {
-		return nil, fmt.Errorf("remote not configured: set Host in Opts")
-	}
-	auth, err := buildAuthMethods(opts)
-	if err != nil {
-		return nil, err
-	}
-	port := opts.Port
-	if port <= 0 {
-		port = 22
-	}
-	addr := fmt.Sprintf("%s:%d", opts.Host, port)
-	cfg := &ssh.ClientConfig{
-		User:            opts.User,
-		Auth:            auth,
-		HostKeyCallback: hostKeyCallback,
-		Timeout:         opts.sshTimeout(),
-	}
-	client, err := ssh.Dial("tcp", addr, cfg)
-	if err != nil {
-		return nil, err
-	}
-	if log != nil {
-		log.Info("SSH connection established: %s", addr)
-	}
-	return client, nil
+	var ke *knownhosts.KeyError
+	return errors.As(err, &ke) && len(ke.Want) > 0
 }
 
 // DialKnownHosts connects using KnownHostsOptions.Path for host key verification.
-// opts.HostKey is ignored. When FetchHostKey is set, the server key is fetched and
-// appended when the file is missing or does not contain that key yet.
+// opts.HostKey is ignored. When FetchHostKey is set and the file is missing or
+// does not know the host yet, the server key is fetched (without sending
+// credentials) and appended. With TrustOnMismatch a changed key replaces the
+// host's previous entries (development only, see KnownHostsOptions).
 func DialKnownHosts(opts *Opts, kh KnownHostsOptions, log Logger) (*ssh.Client, error) {
 	path := filepath.FromSlash(strings.TrimSpace(kh.Path))
 	if path == "" {
-		return nil, fmt.Errorf("known_hosts path required")
+		return nil, errors.New("known_hosts path required")
+	}
+	if err := opts.validate(); err != nil {
+		return nil, err
 	}
 
 	if kh.FetchHostKey {
@@ -83,44 +39,48 @@ func DialKnownHosts(opts *Opts, kh KnownHostsOptions, log Logger) (*ssh.Client, 
 		}
 	} else if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("known_hosts file not found: %s (enable FetchHostKey to create it)", path)
+			return nil, fmt.Errorf("known_hosts file not found: %s (enable FetchHostKey to create it)", filepath.Base(path))
 		}
 		return nil, fmt.Errorf("known_hosts file: %w", err)
 	}
 
+	// presented holds the key the server sent in the last attempt, so a
+	// trusted replacement is the key of the verified-failing connection
+	// itself and not one fetched over a second connection.
+	var presented ssh.PublicKey
 	connect := func() (*ssh.Client, error) {
+		if err := checkFileSize(path, maxKnownHostsSize); err != nil {
+			return nil, fmt.Errorf("known_hosts file: %w", err)
+		}
 		cb, err := knownhosts.New(path)
 		if err != nil {
 			return nil, fmt.Errorf("known_hosts file invalid: %w", err)
 		}
 		if log != nil {
-			log.Info("SSH host key verification enabled: %s", path)
+			log.Info("SSH host key verification enabled: %q", filepath.Base(path))
 		}
-		return DialWithHostKeyCallback(opts, cb, nil)
+		capture := func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			presented = key
+			return cb(hostname, remote, key)
+		}
+		return DialWithHostKeyCallback(opts, logHostKeyFailure(capture, log), log)
 	}
 
 	client, err := connect()
 	if err == nil {
 		return client, nil
 	}
-	if !kh.TrustOnMismatch || !isKnownHostsKeyMismatch(err) {
+	if !kh.TrustOnMismatch || !isKnownHostsKeyMismatch(err) || presented == nil {
 		return nil, err
 	}
 
+	keyLine := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(presented)))
 	if log != nil {
-		log.Warn("SSH host key mismatch detected; fetching current server key")
+		log.Warn("SSH host key of %q changed; TrustOnMismatch replaces its known_hosts entries with key fingerprint %s",
+			opts.Host, ssh.FingerprintSHA256(presented))
 	}
-	keyLine, fetchErr := FetchServerHostKey(opts)
-	if fetchErr != nil {
-		return nil, fmt.Errorf("host key mismatch and fetch failed: %w", fetchErr)
-	}
-	port := opts.Port
-	if port <= 0 {
-		port = 22
-	}
-	hostToken := FormatKnownHostsHostToken(opts.Host, port)
-	if appendErr := AppendKnownHostsLine(path, hostToken, keyLine, log); appendErr != nil {
-		return nil, fmt.Errorf("host key mismatch and append failed: %w", appendErr)
+	if err := replaceKnownHostsEntries(path, opts.Host, opts.port(), keyLine); err != nil {
+		return nil, fmt.Errorf("host key mismatch and replace failed: %w", err)
 	}
 	return connect()
 }

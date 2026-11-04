@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # SHA-pinned GitHub Actions.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Only propose releases that are at least 14 days old.
+    cooldown:
+      default-days: 14
+
+  # Go modules.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14

@@ -6,6 +6,7 @@ config.json
 # Cursor / AI assistant (do not commit)
 .cursor/
 .cursorrules
+codereview.md
 AGENTS.md
 CLAUDE.md
 .claude/

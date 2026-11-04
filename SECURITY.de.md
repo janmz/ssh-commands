@@ -27,14 +27,19 @@ Behebung und verantwortungsvolle Veröffentlichung.
   schützen.
 - **Host-Key-Prüfung:** Für verifizierte Verbindungen `HostKey` oder
   `DialKnownHosts` verwenden. `FetchServerHostKey` überspringt die Prüfung
-  bewusst nur für die Ersteinrichtung.
-- **TrustOnMismatch:** Bei aktivierter Option wird bei einem Mismatch der
-  `known_hosts`-Eintrag aktualisiert und einmal erneut verbunden. Nur in
-  kontrollierten Umgebungen einsetzen.
+  bewusst nur für die Ersteinrichtung und sendet keine Zugangsdaten.
+- **TrustOnMismatch:** Nur für Entwicklung. Bei einem Mismatch werden die
+  `known_hosts`-Einträge des Hosts durch den präsentierten Key ersetzt
+  (Fingerprint als Warnung geloggt) und einmal erneut verbunden; der
+  MITM-Schutz für geänderte Keys ist damit aufgehoben.
 - **AES-Verschlüsselung:** Optionale Upload-/Download-Verschlüsselung nutzt ein
-  vom Aufrufer übergebenes Passwort (PBKDF2 + AES-256-CTR). Sie schützt
-  Dateiinhalte während Übertragung/Speicherung auf dem Server, ersetzt aber
-  keine SSH-Transportsicherheit.
+  vom Aufrufer übergebenes Passwort (PBKDF2-SHA256 mit 600.000 Iterationen,
+  AES-256-CTR, HMAC-SHA256 über Header, Dateinamen und Chiffrat). Sie schützt
+  Dateiinhalte bei der Speicherung auf dem Server, ersetzt aber keine
+  SSH-Transportsicherheit. Das Altformat ohne MAC wird nur mit
+  `DownloadOptions.AllowLegacyDecryption` gelesen.
+- **Timeouts:** `Opts.Timeout` begrenzt Verbindungsaufbau, Handshake und
+  SFTP-Start; SSH-Keepalives schließen Verbindungen zu hängenden Servern.
 
 ## Hinweis zur Donationware
 

@@ -6,22 +6,31 @@ Thanks for your interest in contributing!
 
 ## Development
 
-- Go version: see `go.mod` (currently Go 1.25+).
-- Run tests locally:
+- Go version: see `go.mod` (currently Go 1.26+).
+- Install [golangci-lint](https://golangci-lint.run/) v2.14.0 and enable the
+  pre-commit hook once per clone:
 
 ```bash
-go vet ./...
-go test ./... -v
+git config core.hooksPath .githooks
 ```
 
-Optional vulnerability scan:
+- The hook and CI run the same script (gofmt, `go vet`, golangci-lint, tests,
+  EN/DE documentation pairs):
 
 ```bash
-go install golang.org/x/vuln/cmd/govulncheck@latest
+sh scripts/check.sh
+go test -run TestNeedsUpload -v ./...   # single test
+```
+
+Optional vulnerability scan (version pinned as in CI):
+
+```bash
+go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
 govulncheck ./...
 ```
 
-CI runs the same checks on Ubuntu, Windows, and macOS.
+CI runs the checks on Ubuntu, Windows, and macOS. Tool versions are pinned in
+`.github/workflows/ci.yml`; only adopt releases that are at least 14 days old.
 
 ## Pull Requests
 

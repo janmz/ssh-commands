@@ -25,12 +25,17 @@ responsible disclosure.
   form. Callers must protect config files, environment variables, and logs.
 - **Host key verification:** Use `HostKey` or `DialKnownHosts` for verified
   connections. `FetchServerHostKey` intentionally skips verification for
-  initial setup only.
-- **TrustOnMismatch:** When enabled, a host key mismatch updates `known_hosts`
-  and retries once. Use only in controlled environments.
+  initial setup only; it sends no credentials.
+- **TrustOnMismatch:** Development only. A host key mismatch replaces the
+  host's `known_hosts` entries with the presented key (fingerprint logged as
+  warning) and retries once, which disables MITM protection for changed keys.
 - **AES encryption:** Optional upload/download encryption uses a caller-supplied
-  password (PBKDF2 + AES-256-CTR). It protects file contents in transit/at rest
-  on the server but is not a substitute for SSH transport security.
+  password (PBKDF2-SHA256 with 600,000 iterations, AES-256-CTR, HMAC-SHA256 over
+  header, file name and ciphertext). It protects file contents at rest on the
+  server but is not a substitute for SSH transport security. The legacy format
+  without MAC is only read with `DownloadOptions.AllowLegacyDecryption`.
+- **Timeouts:** `Opts.Timeout` bounds connect, handshake and SFTP start; SSH
+  keepalives close connections to hanging servers.
 
 ## Donationware Note
 

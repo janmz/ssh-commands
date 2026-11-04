@@ -1,0 +1,5 @@
+#!/bin/sh
+# Pre-commit hook: runs the shared checks (gofmt, vet, golangci-lint, tests,
+# EN/DE doc pairs). Enable once per clone with:
+#   git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/check.sh"
