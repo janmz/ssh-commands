@@ -1,8 +1,12 @@
 package sshcommands
 
-import "path/filepath"
+import (
+	"fmt"
+	"path/filepath"
+)
 
 // Delete removes the given file names from remoteDir.
+// Names containing path components or ".." are rejected with an error.
 func Delete(opts *Opts, remoteDir string, names []string, log Logger) error {
 	sftpClient, sshClient, err := NewSFTPClient(opts, log)
 	if err != nil {
@@ -12,6 +16,9 @@ func Delete(opts *Opts, remoteDir string, names []string, log Logger) error {
 	defer sftpClient.Close()
 	remoteDir = filepath.ToSlash(remoteDir)
 	for _, name := range names {
+		if !ValidRemoteFileName(name) {
+			return fmt.Errorf("invalid remote file name (path traversal): %q", name)
+		}
 		remotePath := remoteDir + "/" + name
 		if err := sftpClient.Remove(remotePath); err != nil {
 			if log != nil {
@@ -25,4 +32,3 @@ func Delete(opts *Opts, remoteDir string, names []string, log Logger) error {
 	}
 	return nil
 }
-

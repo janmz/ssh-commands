@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
@@ -57,7 +56,7 @@ func DialWithHostKeyCallback(opts *Opts, hostKeyCallback ssh.HostKeyCallback, lo
 		User:            opts.User,
 		Auth:            auth,
 		HostKeyCallback: hostKeyCallback,
-		Timeout:         30 * time.Second,
+		Timeout:         opts.sshTimeout(),
 	}
 	client, err := ssh.Dial("tcp", addr, cfg)
 	if err != nil {

@@ -4,14 +4,26 @@ package sshcommands
 
 import "time"
 
+// DefaultSSHTimeout is used when Opts.Timeout is zero.
+const DefaultSSHTimeout = 30 * time.Second
+
 // Opts holds SSH/SFTP connection parameters.
 type Opts struct {
-	Host     string // SSH host
-	Port     int    // 0 => 22
-	User     string
-	KeyFile  string // path to private key (optional)
-	Password string // plaintext password (optional); at least KeyFile or Password required
-	HostKey  string // path to known_hosts file or inline key(s), separated by " || "
+	Host     string        // SSH host
+	Port     int           // 0 => 22
+	User     string        // SSH user
+	KeyFile  string        // path to private key (optional)
+	Password string        // plaintext password (optional); at least KeyFile or Password required
+	HostKey  string        // path to known_hosts file or inline key(s), separated by " || "
+	Timeout  time.Duration // SSH connect timeout; 0 => DefaultSSHTimeout (30s)
+}
+
+// sshTimeout returns opts.Timeout or DefaultSSHTimeout when it is not positive.
+func (o *Opts) sshTimeout() time.Duration {
+	if o.Timeout <= 0 {
+		return DefaultSSHTimeout
+	}
+	return o.Timeout
 }
 
 // LocalFile describes a local file for Sync (name, path, modtime, size).

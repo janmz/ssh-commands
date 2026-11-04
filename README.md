@@ -60,6 +60,7 @@ by ` || `).
 | `Delete` | Remove given file names from a remote directory |
 | `Download` | Download files matching a pattern (`*`, `?` wildcards) |
 | `ValidDownloadPattern` | Validate a download pattern before use |
+| `ValidRemoteFileName` | Reject file names with path components or `..` |
 | `FetchServerHostKey` | Fetch server host key without verification (setup) |
 | `HostKeyAlreadyPresent` | Check whether a key line is already configured |
 | `DialKnownHosts` | Connect using an OpenSSH `known_hosts` file |
@@ -87,8 +88,13 @@ opts := &sshcommands.Opts{
     User:     "deploy",
     KeyFile:  "/home/user/.ssh/id_ed25519",  // or Password: "<your-password>"
     HostKey:  "ed25519 AAAAC3...",            // or path to known_hosts file
+    Timeout:  10 * time.Second,               // optional; 0 => 30s (DefaultSSHTimeout)
 }
 ```
+
+`Sync`, `Delete` and `Download` reject (or skip) file names containing path
+components or `..` to prevent path traversal. On a host key mismatch only the
+SHA-256 fingerprint of the server key is logged.
 
 ### Sync (upload and prune)
 

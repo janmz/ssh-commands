@@ -61,6 +61,7 @@ verifizierte Verbindungen nötig (Dateipfad oder Inline-Key; mehrere Keys mit
 | `Delete` | Gegebene Dateinamen im Remote-Verzeichnis entfernen |
 | `Download` | Dateien nach Muster herunterladen (Wildcards `*`, `?`) |
 | `ValidDownloadPattern` | Download-Muster vor Verwendung prüfen |
+| `ValidRemoteFileName` | Dateinamen mit Pfadanteilen oder `..` ablehnen |
 | `FetchServerHostKey` | Server-Host-Key ohne Prüfung abrufen (Einrichtung) |
 | `HostKeyAlreadyPresent` | Prüfen, ob ein Key bereits konfiguriert ist |
 | `DialKnownHosts` | Verbindung über OpenSSH-`known_hosts`-Datei |
@@ -88,8 +89,13 @@ opts := &sshcommands.Opts{
     User:     "deploy",
     KeyFile:  "/home/user/.ssh/id_ed25519",  // oder Password: "<Ihr-Passwort>"
     HostKey:  "ed25519 AAAAC3...",            // oder Pfad zu known_hosts
+    Timeout:  10 * time.Second,               // optional; 0 => 30s (DefaultSSHTimeout)
 }
 ```
+
+`Sync`, `Delete` und `Download` lehnen Dateinamen mit Pfadanteilen oder `..` ab
+bzw. überspringen sie (Schutz vor Path-Traversal). Bei Host-Key-Abweichung wird
+nur der SHA-256-Fingerprint des Server-Keys geloggt.
 
 ### Sync (Hochladen und Aufräumen)
 

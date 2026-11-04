@@ -49,6 +49,9 @@ func Sync(opts *Opts, localFiles []LocalFile, remoteDir, aesPassword string, log
 		remoteMap[e.Name] = e
 	}
 	for _, loc := range localFiles {
+		if !ValidRemoteFileName(loc.Name) {
+			return fmt.Errorf("invalid local file name (path traversal): %q", loc.Name)
+		}
 		rem, exists := remoteMap[loc.Name]
 		needUpload := !exists || loc.ModTime.After(rem.ModTime)
 		if encrypt && exists {
@@ -68,6 +71,12 @@ func Sync(opts *Opts, localFiles []LocalFile, remoteDir, aesPassword string, log
 		}
 	}
 	for _, rem := range remoteList {
+		if !ValidRemoteFileName(rem.Name) {
+			if log != nil {
+				log.Warn("skip remote remove: invalid name from server: %q", rem.Name)
+			}
+			continue
+		}
 		if !localHasName(localFiles, rem.Name) {
 			remotePath := remoteDir + "/" + rem.Name
 			if err := sftpClient.Remove(remotePath); err != nil {

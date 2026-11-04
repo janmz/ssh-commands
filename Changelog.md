@@ -2,6 +2,45 @@
 
 All notable changes to this project are documented here.
 
+## [0.2.5] – 2026-11-04 10:02:52
+
+### Security
+
+Ported from the former `janmz/sshcommands` repository (v1.0.1):
+
+- **Path traversal:** new `ValidRemoteFileName()`; `Delete` returns an error
+  for invalid names, `Download` ignores invalid server names when matching
+  wildcards, `Sync` rejects invalid local names and skips invalid remote names
+  when pruning. `ValidDownloadPattern` now delegates to it.
+- **SSH timeout:** new `Opts.Timeout` and `DefaultSSHTimeout` (30s), used by
+  `NewSFTPClient`, `FetchServerHostKey` and `DialWithHostKeyCallback`
+  (previously fixed 30s there, none elsewhere).
+- **Host key logging:** on mismatch only the SHA-256 fingerprint is logged
+  instead of the full public key.
+
+### Added
+
+- Unit tests for `ValidRemoteFileName`, `ValidDownloadPattern` and the timeout
+  default.
+
+### Changed
+
+- README (EN/DE): documents `ValidRemoteFileName`, `Opts.Timeout`, path
+  traversal protection and fingerprint-only host key logging.
+- `.gitignore`: also excludes `CLAUDE.md`, `.claude/`, `securityreport.md` and
+  `*.syso`.
+
+## [0.2.4] – 2026-06-24 00:44:59
+
+### Fixed
+
+- **CI:** workflow matrix switched from Go 1.24.x to 1.25.x to match `go.mod`,
+  so the CI run works again (commit `2472b51`).
+
+### Changed
+
+- CONTRIBUTING and README (EN/DE): required Go version updated to 1.25+.
+
 ## [0.2.3] – 2026-06-24 00:41:50
 
 ### Changed

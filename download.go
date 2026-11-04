@@ -12,11 +12,17 @@ import (
 
 // ValidDownloadPattern returns false if pattern contains path components (no /, \, ..).
 func ValidDownloadPattern(pattern string) bool {
-	if pattern == "" || strings.Contains(pattern, "..") {
+	return ValidRemoteFileName(pattern)
+}
+
+// ValidRemoteFileName returns false if name contains path components or "..".
+// Use for any remote or local filename that is joined to a base directory.
+func ValidRemoteFileName(name string) bool {
+	if name == "" || strings.Contains(name, "..") {
 		return false
 	}
-	return filepath.Base(pattern) == pattern &&
-		!strings.Contains(pattern, "/") && !strings.Contains(pattern, "\\")
+	return filepath.Base(name) == name &&
+		!strings.Contains(name, "/") && !strings.Contains(name, "\\")
 }
 
 // Download downloads files matching pattern from remoteDir into destDir.
@@ -44,6 +50,9 @@ func Download(opts *Opts, pattern, destDir, remoteDir, aesPassword string, log L
 	var toDownload []string
 	if strings.Contains(pattern, "*") || strings.Contains(pattern, "?") {
 		for _, e := range remoteList {
+			if !ValidRemoteFileName(e.Name) {
+				continue
+			}
 			ok, err := filepath.Match(pattern, e.Name)
 			if err != nil {
 				return nil, fmt.Errorf("pattern: %w", err)

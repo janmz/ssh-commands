@@ -51,6 +51,7 @@ func FetchServerHostKey(opts *Opts) (keyLine string, err error) {
 		User:            opts.User,
 		Auth:            auth,
 		HostKeyCallback: hostKeyCB,
+		Timeout:         opts.sshTimeout(),
 	}
 	client, err := ssh.Dial("tcp", addr, cfg)
 	if err != nil {

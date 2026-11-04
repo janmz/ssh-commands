@@ -21,8 +21,7 @@ func hostKeyCallback(hostKey string, log Logger) (ssh.HostKeyCallback, error) {
 		return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			err := inner(hostname, remote, key)
 			if err != nil {
-				line := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(key)))
-				log.Info("host key mismatch: server %s sent key (add to host key): %s", hostname, line)
+				log.Info("host key mismatch: server %s sent key with fingerprint %s", hostname, ssh.FingerprintSHA256(key))
 			}
 			return err
 		}
@@ -121,6 +120,7 @@ func dial(opts *Opts, log Logger) (*ssh.Client, error) {
 		User:            opts.User,
 		Auth:            auth,
 		HostKeyCallback: hostKeyCB,
+		Timeout:         opts.sshTimeout(),
 	}
 	return ssh.Dial("tcp", addr, cfg)
 }
